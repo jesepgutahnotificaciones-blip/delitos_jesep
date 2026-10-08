@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Control de Delitos</title>
+    <!-- Cargamos Plotly.js desde el CDN oficial -->
+    <script src="https://plot.ly"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        header {
+            background-color: #1e293b;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .loading {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #64748b;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Panel de Monitoreo de Seguridad Ciudadana</h1>
+            <p>Datos en tiempo real desde Google Sheets alojado en GitHub</p>
+        </header>
+
+        <div class="card">
+            <!-- Mensaje de carga mientras GitHub se comunica con Google -->
+            <div id="loading" class="loading">Conectando con la base de datos de Google Sheets...</div>
+            <div id="chart"></div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // Pega aquí la URL exacta que te entregó Google Apps Script (Debe terminar en /exec)
+        const URL_API_GOOGLE = "TU_URL_DE_GOOGLE_APPS_SCRIPT_AQUÍ";
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Llamada HTTP externa mediante fetch
+            fetch(URL_API_GOOGLE)
+                .then(response => {
+                    if (!response.ok) throw new Error("Error en la respuesta del servidor de Google");
+                    return response.json();
+                })
+                .then(datos => {
+                    dibujarGrafico(datos);
+                })
+                .catch(error => {
+                    mostrarError(error);
+                });
+        });
+
+        function dibujarGrafico(datos) {
+            // Ocultar el mensaje de carga
+            document.getElementById('loading').style.display = 'none';
+            
+            // Mapear las columnas de la hoja de cálculo
+            var meses = datos.map(f => f.Mes);
+            var robos = datos.map(f => f.Robos);
+            var homicidios = datos.map(f => f.Homicidios);
+            var orden = datos.map(f => f['Falta de Orden']);
+
+            // Crear trazos de Plotly
+            var trace1 = { x: meses, y: robos, name: 'Robos', type: 'scatter', mode: 'lines+markers' };
+            var trace2 = { x: meses, y: homicidios, name: 'Homicidios', type: 'scatter', mode: 'lines+markers' };
+            var trace3 = { x: meses, y: orden, name: 'Falta de Orden', type: 'scatter', mode: 'lines+markers' };
+
+            var dataPlotly = [trace1, trace2, trace3];
+
+            var layout = {
+                title: 'Evolución Mensual de Incidencias',
+                xaxis: { title: 'Meses' },
+                yaxis: { title: 'Cantidad de Casos' },
+                template: 'plotly_white',
+                responsive: true
+            };
+
+            Plotly.newPlot('chart', dataPlotly, layout);
+        }
+
+        function mostrarError(err) {
+            document.getElementById('loading').innerText = "Error de conexión: " + err.message + ". Verifica los permisos de tu API de Google.";
+            document.getElementById('loading').style.color = "#ef4444";
+        }
+    </script>
+
+</body>
+</html>
